@@ -119,7 +119,5 @@ if st.button("Resolver Ecuación", type="primary"):
 
 # --- SECCIÓN DEL AUTOR ---
 st.markdown("---") # Línea divisoria horizontal
-st.markdown("### Créditos")
 # REEMPLAZA "TU NOMBRE AQUÍ" CON TU NOMBRE REAL O ALIAS
-st.markdown("**Autor:** [Elka Natalia Magaña Fierro]") 
-st.caption("Desarrollado con Python y Streamlit para la resolución de Ecuaciones Diferenciales.")
+st.markdown("**Autor:** Elka Natalia Magaña Fierro") 
