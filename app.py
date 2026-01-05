@@ -1,11 +1,13 @@
 import streamlit as st
 import sympy as sp
 
-# Configuración de la página
-st.set_page_config(page_title="Solver EDO 2° Orden", page_icon="∫")
+# --- CONFIGURACIÓN DE PÁGINA ---
+# Aquí cambiamos el nombre que aparece en la pestaña del navegador
+st.set_page_config(page_title="Ecuación Diferencial Lineal de Orden 2", page_icon="∫")
 
-st.title("Solver EDO Lineal Homogénea de 2° Orden")
-st.markdown("Resuelve ecuaciones de la forma: $a y'' + b y' + c y = 0$")
+# --- TÍTULO PRINCIPAL ---
+st.title("Ecuación Diferencial Lineal de Orden 2")
+st.markdown("Resuelve ecuaciones homogéneas de la forma: $a y'' + b y' + c y = 0$")
 
 # --- 1. ENTRADA DE DATOS ---
 st.subheader("1. Ingrese los coeficientes")
@@ -26,7 +28,7 @@ def format_number(n):
 # Botón para resolver
 if st.button("Resolver Ecuación", type="primary"):
     try:
-        # Validación y Conversión de entradas
+        # Validación y Conversión
         try:
             a_val = sp.S(a_input)
             b_val = sp.S(b_input)
@@ -49,7 +51,14 @@ if st.button("Resolver Ecuación", type="primary"):
         # --- CÁLCULO DE RAÍCES ---
         roots = sp.solve(ec, m)
         
-        r1, r2 = roots[0], roots[1] if len(roots) > 1 else roots[0]
+        # Manejo seguro de índices de raíces
+        if len(roots) == 0:
+             st.error("No se encontraron raíces.")
+             st.stop()
+        elif len(roots) == 1:
+             r1, r2 = roots[0], roots[0]
+        else:
+             r1, r2 = roots[0], roots[1]
         
         st.subheader("3. Raíces")
         col_r1, col_r2 = st.columns(2)
@@ -61,39 +70,37 @@ if st.button("Resolver Ecuación", type="primary"):
         # --- 4. SOLUCIÓN GENERAL ---
         st.subheader("4. Solución General")
         
-        x = sp.symbols('x')
         y_c = None
         explicacion = ""
 
-        # CASO 1: Complejas Conjugadas (Discriminante < 0)
+        # CASO 1: Complejas Conjugadas (Parte imaginaria distinta de 0)
         if sp.im(r1) != 0:
             alpha = sp.re(r1)
             beta = sp.Abs(sp.im(r1))
             
-            # Formato LaTeX
-            lat_alpha = sp.latex(alpha) if alpha != 0 else ""
+            lat_alpha = sp.latex(alpha)
             lat_beta = sp.latex(beta)
             
+            # Si alpha es 0, no ponemos e^0x
             exp_part = f"e^{{{lat_alpha}x}}" if alpha != 0 else ""
             trig_part = f"(C_1 \\cos({lat_beta}x) + C_2 \\sin({lat_beta}x))"
             
             sol_latex = f"y_c = {exp_part} {trig_part}"
-            explicacion = "Raíces complejas conjugadas: $r = \\alpha \\pm \\beta i$"
+            explicacion = "Caso: Raíces complejas conjugadas ($r = \\alpha \\pm \\beta i$)"
 
-        # CASO 2: Reales Repetidas (Discriminante = 0)
+        # CASO 2: Reales Repetidas
         elif r1 == r2:
             r_val = sp.latex(r1)
             exp_part = f"e^{{{r_val}x}}" if r1 != 0 else ""
             
-            # Si r=0, la solución es C1 + C2x
             if r1 == 0:
                  sol_latex = "y_c = C_1 + C_2 x"
             else:
                  sol_latex = f"y_c = C_1 {exp_part} + C_2 x {exp_part}"
             
-            explicacion = "Raíces reales repetidas."
+            explicacion = "Caso: Raíces reales repetidas."
 
-        # CASO 3: Reales Distintas (Discriminante > 0)
+        # CASO 3: Reales Distintas
         else:
             r1_val = sp.latex(r1)
             r2_val = sp.latex(r2)
@@ -102,10 +109,17 @@ if st.button("Resolver Ecuación", type="primary"):
             term2 = f"e^{{{r2_val}x}}" if r2 != 0 else "1"
             
             sol_latex = f"y_c = C_1 {term1} + C_2 {term2}"
-            explicacion = "Raíces reales distintas."
+            explicacion = "Caso: Raíces reales distintas."
 
         st.success(explicacion)
         st.latex(sol_latex)
 
     except Exception as e:
-        st.error(f"Ocurrió un error al resolver: {e}")
+        st.error(f"Ocurrió un error: {e}")
+
+# --- SECCIÓN DEL AUTOR ---
+st.markdown("---") # Línea divisoria horizontal
+st.markdown("### Créditos")
+# REEMPLAZA "TU NOMBRE AQUÍ" CON TU NOMBRE REAL O ALIAS
+st.markdown("**Autor:** [Elka Natalia Magaña Fierro]") 
+st.caption("Desarrollado con Python y Streamlit para la resolución de Ecuaciones Diferenciales.")
