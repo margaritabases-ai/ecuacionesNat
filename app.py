@@ -2,99 +2,121 @@ import streamlit as st
 import sympy as sp
 
 # --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(page_title="Solucionador de EDO 2do Orden", page_icon="📝", layout="centered")
+st.set_page_config(page_title="Tutor de EDO 2do Orden", page_icon="📝")
 
-# --- TÍTULO Y CONTEXTO ---
-st.title("Ecuación Diferencial Lineal de Orden 2")
+# --- ESTILO ---
 st.markdown("""
-Esta herramienta resuelve ecuaciones de la forma:  
-$$a y'' + b y' + c y = 0$$
-Mostrando el paso a paso del **Conjunto Fundamental de Soluciones**.
-""")
+    <style>
+    .teoria { background-color: #f0f2f6; padding: 15px; border-radius: 10px; border-left: 5px solid #ff4b4b; }
+    .resultado { font-size: 1.2rem; font-weight: bold; color: #1f77b4; }
+    </style>
+    """, unsafe_allow_html=True)
 
-# --- 1. ENTRADA DE DATOS EN EL LATERAL ---
+# --- TÍTULO ---
+st.title("Ecuación Diferencial Lineal de Orden 2")
+st.markdown("Resolución de: $a y'' + b y' + c y = 0$")
+
+# --- ENTRADA DE DATOS ---
 with st.sidebar:
-    st.header("Coeficientes")
-    a_in = st.text_input("Coeficiente a (y'')", value="1")
-    b_in = st.text_input("Coeficiente b (y')", value="-4")
-    c_in = st.text_input("Coeficiente c (y)", value="4")
-    resolver = st.button("Resolver Paso a Paso", type="primary")
+    st.header("1. Ingrese Coeficientes")
+    a_val = st.text_input("Coeficiente a", value="1")
+    b_val = st.text_input("Coeficiente b", value="-5")
+    c_val = st.text_input("Coeficiente c", value="6")
+    btn = st.button("Resolver con Explicación", type="primary")
 
-if resolver:
+if btn:
     try:
-        # Convertir entradas a símbolos de Sympy
-        a = sp.S(a_in)
-        b = sp.S(b_in)
-        c = sp.S(c_in)
+        a = sp.S(a_val)
+        b = sp.S(b_val)
+        c = sp.S(c_val)
         x = sp.symbols('x')
+        m = sp.symbols('m')
 
         if a == 0:
             st.error("Si a=0, la ecuación no es de segundo orden.")
             st.stop()
 
-        # --- PASO 1: ECUACIÓN CARACTERÍSTICA ---
-        st.subheader("1. Ecuación Característica")
-        m = sp.symbols('m')
-        eq_carac = a*m**2 + b*m + c
-        st.write("Sustituimos la propuesta $y = e^{mx}$ para obtener:")
-        st.latex(f"{sp.latex(eq_carac)} = 0")
+        # --- PASO 1: TEORÍA Y ECUACIÓN ---
+        st.subheader("Paso 1: La Ecuación Característica")
+        st.markdown("""
+        <div class='teoria'>
+        Para resolver esta EDO, suponemos una solución de la forma <b>y = e<sup>mx</sup></b>. 
+        Al derivar e insertar en la ecuación original, obtenemos una ecuación algebraica llamada <b>Ecuación Característica</b>.
+        </div>
+        """, unsafe_allow_html=True)
+        
+        ec_carac = a*m**2 + b*m + c
+        st.latex(f"{sp.latex(ec_carac)} = 0")
 
-        # --- PASO 2: DISCRIMINANTE Y RAÍCES ---
-        st.subheader("2. Cálculo de Raíces")
+        # --- PASO 2: RAÍCES ---
+        st.subheader("Paso 2: Cálculo de las raíces (m)")
+        st.write("Usamos la fórmula cuadrática para encontrar los valores de $m$ que satisfacen la ecuación:")
+        
         disc = b**2 - 4*a*c
-        st.write(f"Discriminante: $\\Delta = {sp.latex(b)}^2 - 4({sp.latex(a)})({sp.latex(c)}) = {sp.latex(disc)}$")
+        roots = sp.solve(ec_carac, m)
         
-        roots = sp.solve(eq_carac, m)
-        
-        # --- PASO 3: DETERMINACIÓN DE y1 y y2 ---
-        st.subheader("3. Conjunto Fundamental de Soluciones")
+        st.latex(f"m = \\frac{{-{sp.latex(b)} \\pm \\sqrt{{{sp.latex(b)}^2 - 4({sp.latex(a)})({sp.latex(c)})}}}}{{2({sp.latex(a)})}}")
+
+        # --- PASO 3: ANÁLISIS DE y1 y y2 ---
+        st.subheader("Paso 3: Conjunto Fundamental de Soluciones")
         
         y1, y2 = None, None
-        tipo_caso = ""
+        explicacion_caso = ""
 
         # CASO 1: Reales Distintas
         if disc > 0:
             r1, r2 = roots[0], roots[1]
-            tipo_caso = "Raíces reales y distintas"
             y1 = sp.exp(r1 * x)
             y2 = sp.exp(r2 * x)
-            st.write(f"Como $\\Delta > 0$, tenemos dos raíces reales: $r_1 = {sp.latex(r1)}$ y $r_2 = {sp.latex(r2)}$")
-
+            explicacion_caso = f"""
+            Como el discriminante es <b>positivo</b> ({disc}), tenemos dos raíces reales distintas: 
+            m₁ = {r1} y m₂ = {r2}. Esto genera dos soluciones linealmente independientes.
+            """
+            
         # CASO 2: Reales Repetidas
         elif disc == 0:
             r = roots[0]
-            tipo_caso = "Raíces reales repetidas"
             y1 = sp.exp(r * x)
             y2 = x * sp.exp(r * x)
-            st.write(f"Como $\\Delta = 0$, hay una raíz repetida: $r = {sp.latex(r)}$")
-            st.write("Para que las soluciones sean linealmente independientes, multiplicamos la segunda por $x$.")
+            explicacion_caso = f"""
+            El discriminante es <b>cero</b>. Tenemos una raíz real repetida: m = {r}. 
+            Para que la segunda solución sea independiente de la primera, la teoría nos dicta multiplicar por <b>x</b>.
+            """
 
         # CASO 3: Complejas
         else:
             alpha = sp.re(roots[0])
             beta = sp.Abs(sp.im(roots[0]))
-            tipo_caso = "Raíces complejas conjugadas"
             y1 = sp.exp(alpha * x) * sp.cos(beta * x)
             y2 = sp.exp(alpha * x) * sp.sin(beta * x)
-            st.write(f"Como $\\Delta < 0$, las raíces son complejas: $r = {sp.latex(alpha)} \\pm {sp.latex(beta)}i$")
+            explicacion_caso = f"""
+            El discriminante es <b>negativo</b>. Las raíces son complejas conjugadas: m = {alpha} ± {beta}i. 
+            Usando la Identidad de Euler, transformamos la solución exponencial en funciones <b>Seno y Coseno</b>.
+            """
 
-        # Mostrar y1 y y2 claramente
+        st.markdown(f"<div class='teoria'>{explicacion_caso}</div>", unsafe_allow_html=True)
+        
         col1, col2 = st.columns(2)
         with col1:
-            st.info(f"**$y_1(x) = {sp.latex(y1)}$**")
+            st.metric("Solución y₁(x)", f"{sp.latex(y1)}")
+            st.latex(f"y_1 = {sp.latex(y1)}")
         with col2:
-            st.info(f"**$y_2(x) = {sp.latex(y2)}$**")
+            st.metric("Solución y₂(x)", f"{sp.latex(y2)}")
+            st.latex(f"y_2 = {sp.latex(y2)}")
 
         # --- PASO 4: SOLUCIÓN GENERAL ---
-        st.subheader("4. Solución General")
-        st.write(f"Basado en el caso de **{tipo_caso}**, la solución es la combinación lineal $y(x) = C_1 y_1 + C_2 y_2$:")
+        st.subheader("Paso 4: Solución General")
+        st.write("La solución general es la combinación lineal de nuestro conjunto fundamental:")
         
-        sol_gen = sp.symbols('C1')*y1 + sp.symbols('C2')*y2
-        st.success(f"### $y(x) = {sp.latex(sol_gen)}$")
+        c1, c2 = sp.symbols('C1 C2')
+        sol_final = c1*y1 + c2*y2
+        
+        st.success("Resultado Final:")
+        st.latex(f"y(x) = {sp.latex(sol_final)}")
 
     except Exception as e:
-        st.error(f"Error en el proceso: {e}")
+        st.error(f"Error en los datos: {e}")
 
-# --- SECCIÓN DEL AUTOR ---
+# --- AUTOR ---
 st.markdown("---")
 st.markdown("**Autor:** Elka Natalia Magaña Fierro")
