@@ -2,19 +2,11 @@ import streamlit as st
 import sympy as sp
 
 # --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(page_title="Tutor de EDO 2do Orden", page_icon="📝")
-
-# --- ESTILO ---
-st.markdown("""
-    <style>
-    .teoria { background-color: #f0f2f6; padding: 15px; border-radius: 10px; border-left: 5px solid #ff4b4b; }
-    .resultado { font-size: 1.2rem; font-weight: bold; color: #1f77b4; }
-    </style>
-    """, unsafe_allow_html=True)
+st.set_page_config(page_title="Tutor EDO 2do Orden", page_icon="📝")
 
 # --- TÍTULO ---
-st.title("Ecuación Diferencial Lineal de Orden 2")
-st.markdown("Resolución de: $a y'' + b y' + c y = 0$")
+st.title("Differential Equation Solver")
+st.write("### Resolución paso a paso de: $a y'' + b y' + c y = 0$")
 
 # --- ENTRADA DE DATOS ---
 with st.sidebar:
@@ -33,55 +25,59 @@ if btn:
         m = sp.symbols('m')
 
         if a == 0:
-            st.error("Si a=0, la ecuación no es de segundo orden.")
+            st.error("El coeficiente 'a' no puede ser 0.")
             st.stop()
 
-        # --- PASO 1: TEORÍA Y ECUACIÓN ---
-        st.subheader("Paso 1: La Ecuación Característica")
-        st.markdown("""
-        <div class='teoria'>
-        Para resolver esta EDO, suponemos una solución de la forma <b>y = e<sup>mx</sup></b>. 
-        Al derivar e insertar en la ecuación original, obtenemos una ecuación algebraica llamada <b>Ecuación Característica</b>.
-        </div>
-        """, unsafe_allow_html=True)
+        # --- PASO 1: ECUACIÓN CARACTERÍSTICA ---
+        st.header("Paso 1: La Ecuación Característica")
+        st.info("""
+        **¿De dónde sale esto?** Suponemos que la solución tiene la forma $y = e^{mx}$. Al sustituir esta función y sus derivadas en la ecuación original, 
+        obtenemos una ecuación de segundo grado en términos de $m$.
+        """)
         
         ec_carac = a*m**2 + b*m + c
         st.latex(f"{sp.latex(ec_carac)} = 0")
 
         # --- PASO 2: RAÍCES ---
-        st.subheader("Paso 2: Cálculo de las raíces (m)")
-        st.write("Usamos la fórmula cuadrática para encontrar los valores de $m$ que satisfacen la ecuación:")
+        st.header("Paso 2: Cálculo de las raíces")
+        st.write("Resolvemos para $m$ usando la fórmula general:")
         
         disc = b**2 - 4*a*c
         roots = sp.solve(ec_carac, m)
         
-        st.latex(f"m = \\frac{{-{sp.latex(b)} \\pm \\sqrt{{{sp.latex(b)}^2 - 4({sp.latex(a)})({sp.latex(c)})}}}}{{2({sp.latex(a)})}}")
+        st.latex(f"m = \\frac{{-({sp.latex(b)}) \\pm \\sqrt{{{sp.latex(b)}^2 - 4({sp.latex(a)})({sp.latex(c)})}}}}{{2({sp.latex(a)})}}")
+        st.write(f"El discriminante es: $\\Delta = {sp.latex(disc)}$")
 
-        # --- PASO 3: ANÁLISIS DE y1 y y2 ---
-        st.subheader("Paso 3: Conjunto Fundamental de Soluciones")
+        # --- PASO 3: ANÁLISIS DE SOLUCIONES INDIVIDUALES ---
+        st.header("Paso 3: Conjunto Fundamental ($y_1$ y $y_2$)")
         
         y1, y2 = None, None
-        explicacion_caso = ""
 
         # CASO 1: Reales Distintas
         if disc > 0:
             r1, r2 = roots[0], roots[1]
             y1 = sp.exp(r1 * x)
             y2 = sp.exp(r2 * x)
-            explicacion_caso = f"""
-            Como el discriminante es <b>positivo</b> ({disc}), tenemos dos raíces reales distintas: 
-            m₁ = {r1} y m₂ = {r2}. Esto genera dos soluciones linealmente independientes.
-            """
+            
+            st.success("**Caso: Raíces Reales y Distintas**")
+            st.write(f"Las raíces son $m_1 = {sp.latex(r1)}$ y $m_2 = {sp.latex(r2)}$.")
+            st.markdown("""
+            Como las raíces son diferentes, cada una genera una solución exponencial independiente. 
+            El conjunto fundamental es:
+            """)
             
         # CASO 2: Reales Repetidas
         elif disc == 0:
             r = roots[0]
             y1 = sp.exp(r * x)
             y2 = x * sp.exp(r * x)
-            explicacion_caso = f"""
-            El discriminante es <b>cero</b>. Tenemos una raíz real repetida: m = {r}. 
-            Para que la segunda solución sea independiente de la primera, la teoría nos dicta multiplicar por <b>x</b>.
-            """
+            
+            st.success("**Caso: Raíces Reales Repetidas**")
+            st.write(f"Solo existe una raíz única: $m = {sp.latex(r)}$.")
+            st.markdown("""
+            Si usáramos $e^{mx}$ dos veces, las soluciones no serían independientes. 
+            Por lo tanto, multiplicamos la segunda solución por **$x$** para que el conjunto sea linealmente independiente.
+            """)
 
         # CASO 3: Complejas
         else:
@@ -89,34 +85,35 @@ if btn:
             beta = sp.Abs(sp.im(roots[0]))
             y1 = sp.exp(alpha * x) * sp.cos(beta * x)
             y2 = sp.exp(alpha * x) * sp.sin(beta * x)
-            explicacion_caso = f"""
-            El discriminante es <b>negativo</b>. Las raíces son complejas conjugadas: m = {alpha} ± {beta}i. 
-            Usando la Identidad de Euler, transformamos la solución exponencial en funciones <b>Seno y Coseno</b>.
-            """
+            
+            st.success("**Caso: Raíces Complejas Conjugadas**")
+            st.write(f"Las raíces son complejas: $m = {sp.latex(alpha)} \\pm {sp.latex(beta)}i$.")
+            st.markdown(f"""
+            Usando la **Identidad de Euler**, convertimos las exponenciales complejas en funciones reales. 
+            La parte real ($\\alpha = {sp.latex(alpha)}$) va en la exponencial, y la imaginaria ($\\beta = {sp.latex(beta)}$) dentro del seno y coseno.
+            """)
 
-        st.markdown(f"<div class='teoria'>{explicacion_caso}</div>", unsafe_allow_html=True)
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric("Solución y₁(x)", f"{sp.latex(y1)}")
-            st.latex(f"y_1 = {sp.latex(y1)}")
-        with col2:
-            st.metric("Solución y₂(x)", f"{sp.latex(y2)}")
-            st.latex(f"y_2 = {sp.latex(y2)}")
+        # Mostrar y1 y y2 en cuadros destacados
+        c1, c2 = st.columns(2)
+        with c1:
+            st.help(f"y_1(x) = {sp.latex(y1)}")
+        with c2:
+            st.help(f"y_2(x) = {sp.latex(y2)}")
 
         # --- PASO 4: SOLUCIÓN GENERAL ---
-        st.subheader("Paso 4: Solución General")
-        st.write("La solución general es la combinación lineal de nuestro conjunto fundamental:")
+        st.header("Paso 4: Solución General")
+        st.write("Combinamos las soluciones individuales multiplicándolas por constantes arbitrarias $C_1$ y $C_2$:")
         
-        c1, c2 = sp.symbols('C1 C2')
-        sol_final = c1*y1 + c2*y2
+        c1_sym, c2_sym = sp.symbols('C1 C2')
+        sol_final = c1_sym*y1 + c2_sym*y2
         
-        st.success("Resultado Final:")
+        st.balloons()
+        st.markdown(f"### ✨ Solución final:")
         st.latex(f"y(x) = {sp.latex(sol_final)}")
 
     except Exception as e:
-        st.error(f"Error en los datos: {e}")
+        st.error(f"Hubo un problema con la expresión ingresada: {e}")
 
-# --- AUTOR ---
+# --- PIE DE PÁGINA ---
 st.markdown("---")
-st.markdown("**Autor:** Elka Natalia Magaña Fierro")
+st.caption("Desarrollado por: Elka Natalia Magaña Fierro | Herramienta Educativa de Matemáticas")
